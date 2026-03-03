@@ -284,9 +284,13 @@ class DeckdownApp(App):
 
     def _refresh_slide(self) -> None:
         """Replace the slide widget with updated content."""
-        old = self.query_one(SlideWidget)
+        try:
+            old = self.query_one(SlideWidget)
+        except Exception:
+            return  # Widget not mounted yet (e.g., during early resize)
         new_widget = self._make_slide_widget()
-        old.replace(new_widget)
+        old.remove()
+        self.mount(new_widget)
 
     def action_next_slide(self) -> None:
         if self.current_slide < self.presentation.total_slides - 1:
