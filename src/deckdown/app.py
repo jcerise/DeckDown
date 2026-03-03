@@ -69,26 +69,48 @@ class SlideWidget(Widget):
             self.slide, self.theme, width, height, self.exec_outputs
         )
 
+        # Measure actual content height using a temporary console
+        from rich.console import Console
+        measure_console = Console(width=width, force_terminal=True)
+
+        content_height = 0
+        for r in content_renderables:
+            with measure_console.capture():
+                measure_console.print(r)
+            # Count lines from the last print
+            captured = measure_console.export_text()
+        # Re-measure properly: render all content and count lines
+        temp_console = Console(width=width, record=True, force_terminal=True)
+        for r in content_renderables:
+            temp_console.print(r)
+        rendered_text = temp_console.export_text()
+        content_height = rendered_text.count("\n")
+
+        # Calculate chrome height
+        chrome_lines = 0
+        if header:
+            chrome_lines += 2  # header + blank line
+        if footer:
+            chrome_lines += 1
+        if progress:
+            chrome_lines += 1
+
         # Build the full slide layout
         parts = []
         if header:
             parts.append(header)
             parts.append(Text(""))
 
-        # Add top padding for vertical centering
-        # Estimate content height (rough: 1 line per renderable)
-        content_lines = len(content_renderables)
-        chrome_lines = (2 if header else 0) + (1 if footer else 0) + (1 if progress else 0)
+        # Calculate vertical centering
         available = height - chrome_lines
-        top_pad = max(0, (available - content_lines) // 3)  # 1/3 from top
+        top_pad = max(0, (available - content_height) // 3)
+        bottom_pad = max(0, available - content_height - top_pad)
 
         for _ in range(top_pad):
             parts.append(Text(""))
 
         parts.extend(content_renderables)
 
-        # Fill remaining space
-        bottom_pad = max(0, available - top_pad - content_lines)
         for _ in range(bottom_pad):
             parts.append(Text(""))
 
