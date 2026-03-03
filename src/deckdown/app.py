@@ -70,17 +70,8 @@ class SlideWidget(Widget):
         )
 
         # Measure actual content height using a temporary console
-        from rich.console import Console
-        measure_console = Console(width=width, force_terminal=True)
-
-        content_height = 0
-        for r in content_renderables:
-            with measure_console.capture():
-                measure_console.print(r)
-            # Count lines from the last print
-            captured = measure_console.export_text()
-        # Re-measure properly: render all content and count lines
-        temp_console = Console(width=width, record=True, force_terminal=True)
+        from rich.console import Console as MeasureConsole
+        temp_console = MeasureConsole(width=width, record=True, force_terminal=True)
         for r in content_renderables:
             temp_console.print(r)
         rendered_text = temp_console.export_text()
